@@ -1,9 +1,26 @@
 #!/usr/bin/python
 
 import sys
+import collections as c
 
+def eq_orderfree(list1, list2):
+    """Check whether two lists contains the same elements regardless of the
+       order. We convert the lists into tuple and then to set.
+       use collections.Counter function
+    """
+    set1 = set(map(tuple, list1))
+    set2 = set(map(tuple, list2))
+
+    if c.Counter(set1) == c.Counter(set2):
+        return True
+    else:
+        return False
 
 def parser(file):
+    """Parse the file containing the maze, return a 2D list that represents
+       the maze. 
+       #TODO: add error handling         
+    """
     file_open = open (file, "r")
     big_list = []
 
@@ -13,20 +30,6 @@ def parser(file):
         big_list.append(line)
 
     return big_list
-# In this part, we get a 2-D arry/list and extract some data
-# about the 'world'
-# example:
-# 
-# %%%%%%
-# % % .%
-# % P  %
-# %%%%%%
-parsed_array = [ 
-                 ['%','%','%','%','%','%'],
-                 ['%', ' ', '%',' ', '.','%'],
-                 ['%',' ', 'P',' ',' ', '%'], 
-                 ['%','%','%','%','%','%']
-                ] 
 
 def extractParams (array_2d):
     '''Given an array, this function extract
@@ -37,49 +40,73 @@ def extractParams (array_2d):
        - prize locations (.)
     '''
     # do some checking (try?)
-    # initialize with 0
     number_prizes = 0
-
-    # Empty list of tuples
     prize_locations = []
     # starting point not found yet (default =  (-inf, -inf))
     # first index refers to line number
     # second index refers to char in the line
-    starting_point = [-99999,-99999]
+    starting_point = [[-99999,-99999]]
 
-    for line in array_2d:
-        for point in line:
+    for (line_idx, line) in enumerate (array_2d):
+        for (point_idx, point) in enumerate(line):
+            print (line_idx, point_idx, point)
             if point == '.':
                 number_prizes += 1 
-                print ("Addin these points ", array_2d.index(line),line.index(point))
-                prize_locations.append([array_2d.index(line),line.index(point)])
+                prize_locations.append([line_idx, point_idx])
             elif point == 'P':
-                starting_point[0] = array_2d.index(line)
-                starting_point[1] = line.index(point)
+                starting_point[0][0] = array_2d.index(line)
+                starting_point[0][1] = line.index(point)
             else:
                 pass
     print (number_prizes)
     print (starting_point)
     print (prize_locations)
 
-def goalTest(eval_state, goal_state):
-    # takes a state representation as an object
-    # can be a dictionary (also the extractParams can return a dict)
-    # There has to be a way to get the goals that are predefined 
-    # and test those data against the passed argument
-    #
-    # arg_state = {'start': [1,1],'prizes':2,locations_prizes=[[1,2], [3,4]]}
-    
+    return {
+            'prizes': number_prizes,
+            'start': starting_point,
+            'loc_prizes': prize_locations
+    }
+  
+def goalTest(sample, ideal):
+    """
+    sample is the state we are wanting to examine. ideal is the goal state.
+    """
+    for goal in ideal:
+        print ("goal in question is {}".format(goal))
+        if isinstance (ideal[goal], int):
+            print ("Within the try block")
+            # for comparing integer
+            if ideal[goal] != sample[goal]:
+                print ("they int/single arrays are not matching")
+                print (ideal[goal], sample[goal])
+                return False
+            else:
+                print ("The int/list matched")
+                pass
+            # for comparing 2-d lists
+        elif isinstance(ideal[goal], list):
+            print ("There is a typeerror, mean it's a 2d list")
+            print (ideal[goal], sample[goal])
+            if eq_orderfree(ideal[goal], sample[goal]) != True:
+                print ("Equality function returned false")
+                print (ideal[goal], sample[goal])
+                return False
+            else:
+                pass
+                print ("Equality function returned true")
+    print ("All things traversed. All goals are matched")
+    return True
 
 def main():
     try:
         in_file = sys.argv[1]
         parsed = parser(in_file)
-        extractParams(parsed)
+        ideal = extractParams(parsed)
+        goalTest (ideal, ideal)
     except IndexError as e:
-        print ("Enter filename: python state_rep.py MAZE_FILENAME\n")
+        print ("python state_rep.py MAZE_FILENAME\n")
         exit
             
 if __name__ == "__main__":
     main()
-
